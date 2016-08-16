@@ -10,7 +10,7 @@ features.
 from pygmsh import __version__
 
 import numpy
-
+import warnings
 
 class Geometry(object):
 
@@ -412,6 +412,13 @@ class Geometry(object):
         if holes is None:
             s = self.add_plane_surface(ll)
         else:
+            if( not hasattr(holes,'__iter__') ):
+                holes=[holes];
+            if( sum([ not ll[2:] in hole for hole in holes ] ) > 0 ):
+                warnings.warn('\nYou are trying to create holes of {} \n'.format(holes) +
+                              'when polygon is {}, this is likely'.format(X) +
+                              'not intentional and can cause mesh problems\n\n',
+                              RuntimeWarning);
             s = self.add_plane_surface([ll] + holes)
         return s
 

@@ -52,6 +52,39 @@ class Geometry(object):
         '''
         return '\n'.join(self._GMSH_CODE)
 
+    def search_for_constructor(self, obj_str, depth=1):
+        '''Put find the object that generated the obj_str in
+        the Gmsh code. Depth decides the recursion depth.
+        '''
+        return self._search_for_constructor(obj_str=obj_str,depth=depth,current_depth=1);
+
+    def _search_for_constructor(self,obj_str,depth=1,current_depth=1,obj_depth={},indx=0):
+        '''Unexposed arguments, obj_depth is dict of obj,depth for key,value
+        '''
+        if(depth<=0):
+            return obj_depth;
+        code=reversed(self._GMSH_CODE);
+        #advance to current file position
+        for i in range(0,indx):
+            next(code);
+        for line in code:
+            if(obj_str in line):
+                eqn=line.split('=');
+                if(not obj_str in eqn[0]): #has to be on left
+                    continue;
+                if('new' in eqn[1]): #do not want the newx definitions
+                    continue;
+                objs=[ obj for obj in eqn[1].strip().strip('\{').strip('\};').split(',')];
+                for obj in objs:
+                    obj_depth[obj]=current_depth;
+                    obj_depth=self._search_for_constructor(obj_str=obj,
+                                                           depth=depth-1,
+                                                           current_depth=current_depth+1,
+                                                           obj_depth=obj_depth,
+                                                           indx=indx);
+                   
+        return obj_depth;
+
     def add_point(self, x, lcar):
         self._POINT_ID += 1
         name = 'p%d' % self._POINT_ID
